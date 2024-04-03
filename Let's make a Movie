@@ -1,0 +1,83 @@
+#Importing the necessary Libraries and modules to create the video 
+import numpy as np
+import cv2 # not CVAT 
+
+import os
+from glob import glob
+import json
+
+from tqdm import tqdm
+import logging
+import pdb
+#Function Puprpose: To create a video from the files in a specified path and seperate the videos based on 
+#If the experiment was run with either lonza or apex agarose, these video's are outputed into two seperate output folders 
+
+#Logging any error reading the images when trying to make the video
+#logging.basicConfig(filename='video_creation.log', level=logging.ERROR)
+#logger = logging.getLogger(
+
+
+def process_files_in_directory(path):
+    # Initalizes and stores the location of the images extracted from the files
+    lonza_images =[]  #storage 
+    apex_images = [] #storage 
+    for root,dirs,files in os.walk(path):
+        for d in dirs:
+            if 'lonza' in d:  
+                d_root = os.path.join(root, d)
+                lonza_images.append(sorted(glob(os.path.join(d_root, '*.jpg'))))
+            elif 'apex' in d: 
+                d_root = os.path.join(root, d)
+                apex_images.append(sorted(glob(os.path.join(d_root, '*.jpg'))))
+    return (lonza_images, apex_images) #wrapping variables in tuple gives you the flexibility to call change one variable at a time 
+       
+
+def create_video(image_paths_list, dir_name, frame_rate=30 ): 
+    ##This is where you make your comments 
+        #I need the inputs in the tuple to each pass through as image folder and the video is released into two separate video output folder
+    
+    #Making the directory : You have to search for if the directory exists or not before making the video writer object that already assumes that the directory exists, if not your code will crash  
+    if not os.path.exists(dir_name):
+        os.makedirs(dir_name)
+        print('Directory', dir_name, 'created')
+    else: 
+        print('Directory', dir_name, 'already exists')
+
+   
+    #Making the Movies 
+    for index, image_paths in enumerate (tqdm(image_paths_list, desc='Processing image sets'), start=1):
+        video_path = os.path.join(dir_name, f"output_video_name_{index}.mp4")
+        out = cv2.VideoWriter(video_path, cv2.VideoWriter_fourcc(*'mp4v'), frame_rate,(w,h)) 
+        
+        #look at video writer documentation 
+
+        for image_path in image_paths:
+            img = cv2.imread(image_path) 
+            out.write(img) 
+        
+        out.release() 
+
+if __name__ == "__main__":
+    image_folder = "/Users/kerrighanmilton/Documents/mihai/Pivr_images/dye_gradient/"
+    lonza_images, apex_images = process_files_in_directory(image_folder)
+    
+
+    create_video(lonza_images, '/Users/kerrighanmilton/lonza_videos4_11-15-23')
+    create_video(apex_images,'/Users/kerrighanmilton/apex_videos4_11-15-23')
+   
+
+
+    
+    
+    
+    
+
+
+
+
+
+
+
+
+
+    
