@@ -1,0 +1,101 @@
+import tkinter as tk 
+import os 
+from os import walk
+from glob import glob 
+from tkinter import filedialog
+import cv2
+import numpy as np
+from PIL import Image, ImageTk
+
+def open_video(): 
+    filepath = filedialog.askopenfilename(title="Open Video File", filetypes=(("Video Files", "*.mp4 *.avi *.mov"), ("All Files", "*.*")))
+    
+# Open the video file
+    vidcap = cv2.VideoCapture(filepath) #makes a video capture object : get me the frame rate and fps 
+    n_frames = int(vidcap.get(cv2.CAP_PROP_FRAME_COUNT))
+    w = int(vidcap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    h = int(vidcap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    fps = (vidcap.get(cv2.CAP_PROP_FPS))
+
+     #Attempt to read the first frame to create object. 
+    success, frame = vidcap.read() #can you please try to read a frame, reads the first frame of the video and saves 
+    #sucessive function calls will give you the next frame until the end of the video is reached i.e. last frame 
+    
+    # Check if the first frame was read successfully
+    if success:
+        # Save the first frame as a JPEG file
+        print('Read and saved the first frame successfully.')
+        cv2.imshow('frame', frame); cv2.waitKey(0) #waits for you to press the escape key to close the video. deconstructor 
+    
+    return frame
+
+def display_frame (frame, image_label): 
+    pil_image = Image.fromarray(frame)
+    img = ImageTk.PhotoImage(image=pil_image)
+    
+    image_label.config(image=img)
+    image_label.image = img  # Keep a reference so it's not garbage collected
+    canvas.bind("<Button-1>", start_draw)
+
+    return img.size #array 
+
+def show_coordinates(event):
+    # Get mouse coordinates
+    x, y = event.x, event.y
+    # Update label text
+    label.config(text=f"Mouse coordinates: ({x}, {y})")
+
+
+def start_draw(event):
+    global start_x, start_y
+    start_x, start_y = event.x, event.y
+    # Bind mouse motion event to canvas for drawing line
+    canvas.bind("<B1-Motion>", draw_line)
+    # Bind mouse release event to canvas to stop drawing
+    canvas.bind("<ButtonRelease-1>", stop_draw) 
+
+def draw_line(event):
+    global start_x, start_y
+    end_x, end_y = event.x, event.y
+    # Draw line on canvas
+    canvas.delete("line")
+    canvas.create_line(start_x, start_y, end_x, end_y, fill="red", tags="line")
+    # Calculate length of line in pixels
+    length_pixels = ((end_x - start_x)**2 + (end_y - start_y)**2)**0.5
+    status_label.config(text=f"Length: {length_pixels:.2f} pixels")
+
+def stop_draw(event):
+    # Unbind mouse motion event to stop drawing line
+    canvas.unbind("<B1-Motion>")
+    canvas.unbind("<ButtonRelease-1>")
+
+if __name__ == "__main__":
+
+    #create the main window
+    window = tk.Tk()
+    window.title('Find my file')
+    window.geometry("750x500")  # Adjust size as needed
+
+    # Creating GUI elements
+    canvas = tk.Canvas(window, width=800, height=600)
+    canvas.pack()
+
+    label = tk.Label(canvas, text="")
+    label_window = canvas.create_window(10, 10, anchor=tk.NW, window=label)  # Place label on canvas
+    canvas.bind("<Motion>", show_coordinates)
+
+
+
+    open_video_button = tk.Button(window, text="Open Video", command=open_video)
+    open_video_button.pack(pady=20)
+
+    image_label = tk.Label(window)
+    image_label.pack(padx=20, pady=20)
+
+    status_label = tk.Label(window, text="", padx=20, pady=10)
+    status_label.pack()
+
+    # Start the GUI event loop
+    window.mainloop()
+    
+
